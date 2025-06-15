@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepSeek八字分析测试</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6e44ff;
+            --primary-dark: #5a36cc;
+            --secondary: #1a1c2c;
+            --light: #f8f9fa;
+            --gray: #e9ecef;
+            --text: #343a40;
+            --success: #20c997;
+            --card-bg: rgba(255, 255, 255, 0.85);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1c2c, #2d325a);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            background: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 25px 40px;
+            position: relative;
+            text-align: center;
+        }
+        
+        .language-selector {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .lang-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .lang-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .lang-btn.active {
+            background: white;
+            color: var(--primary);
+            font-weight: 600;
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 0 50px;
+        }
+        
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .content {
+            display: flex;
+            min-height: 500px;
+        }
+        
+        .form-section {
+            flex: 1;
+            padding: 40px;
+            background: white;
+            border-right: 1px solid var(--gray);
+        }
+        
+        .result-section {
+            flex: 1;
+            padding: 40px;
+            background: var(--light);
+            position: relative;
+            overflow-y: auto;
+        }
+        
+        .section-title {
+            font-size: 1.8rem;
+            margin-bottom: 25px;
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--secondary);
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid var(--gray);
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus, select:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(110, 68, 255, 0.2);
+        }
+        
+        .btn {
+            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: 16px 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 15px rgba(110, 68, 255, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            background: #adb5bd;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .result-container {
+            display: none;
+        }
+        
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px 0;
+            display: none;
+        }
+        
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(110, 68, 255, 0.2);
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .analysis-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid var(--primary);
+        }
+        
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.4rem;
+            color: var(--primary-dark);
+            margin-bottom: 15px;
+        }
+        
+        .bazi-display {
+            background: linear-gradient(135deg, #6e44ff, #5a36cc);
+            color: white;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .bazi-display h3 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+        }
+        
+        .bazi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .bazi-item {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .bazi-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+        
+        .result-text {
+            line-height: 1.7;
+            font-size: 1.05rem;
+        }
+        
+        .disclaimer {
+            background: var(--gray);
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            margin-top: 30px;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: rgba(255, 255, 255, 0.7);
+            background: var(--secondary);
+            font-size: 0.9rem;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 900px) {
+            .content {
+                flex-direction: column;
+            }
+            
+            .form-section {
+                border-right: none;
+                border-bottom: 1px solid var(--gray);
+            }
+            
+            .bazi-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            header h1 {
+                font-size: 2rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .form-section, .result-section {
+                padding: 25px;
+            }
+            
+            header {
+                padding: 20px;
+            }
+            
+            header h1 {
+                font-size: 1.7rem;
+            }
+            
+            .section-title {
+                font-size: 1.5rem;
+            }
+            
+            .bazi-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .language-selector {
+                position: static;
+                justify-content: center;
+                margin-top: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="language-selector">
+                <button class="lang-btn active" id="lang-zh">
+                    <i class="fas fa-language"></i> 中文
+                </button>
+                <button class="lang-btn" id="lang-en">
+                    <i class="fas fa-globe"></i> English
+                </button>
+            </div>
+            
+            <h1><i class="fas fa-star-and-crescent"></i> DeepSeek八字命理分析</h1>
+            <p>填写您的出生信息，获取专业的八字命理分析报告</p>
+        </header>
+        
+        <div class="content">
+            <div class="form-section">
+                <h2 class="section-title"><i class="fas fa-user-edit"></i> <span class="lang" data-key="personalInfo">个人信息</span></h2>
+                
+                <div class="form-group">
+                    <label for="name" class="lang" data-key="name">姓名</label>
+                    <input type="text" id="name" placeholder="请输入您的姓名">
+                </div>
+                
+                <div class="form-group">
+                    <label for="birthdate" class="lang" data-key="birthdate">出生日期</label>
+                    <input type="date" id="birthdate">
+                </div>
+                
+                <div class="form-group">
+                    <label for="birthtime" class="lang" data-key="birthtime">出生时辰</label>
+                    <select id="birthtime">
+                        <option value="" class="lang" data-key="selectHour">请选择出生时辰</option>
+                        <option value="zi">子时 (23:00-00:59)</option>
+                        <option value="chou">丑时 (01:00-02:59)</option>
+                        <option value="yin">寅时 (03:00-04:59)</option>
+                        <option value="mao">卯时 (05:00-06:59)</option>
+                        <option value="chen">辰时 (07:00-08:59)</option>
+                        <option value="si">巳时 (09:00-10:59)</option>
+                        <option value="wu">午时 (11:00-12:59)</option>
+                        <option value="wei">未时 (13:00-14:59)</option>
+                        <option value="shen">申时 (15:00-16:59)</option>
+                        <option value="you">酉时 (17:00-18:59)</option>
+                        <option value="xu">戌时 (19:00-20:59)</option>
+                        <option value="hai">亥时 (21:00-22:59)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="city" class="lang" data-key="birthCity">出生城市</label>
+                    <input type="text" id="city" placeholder="请输入出生城市">
+                </div>
+                
+                <button id="analyze-btn" class="btn">
+                    <i class="fas fa-chart-line"></i> <span class="lang" data-key="analyzeBtn">开始八字分析</span>
+                </button>
+            </div>
+            
+            <div class="result-section">
+                <h2 class="section-title"><i class="fas fa-file-alt"></i> <span class="lang" data-key="analysisResult">分析结果</span></h2>
+                
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p class="lang" data-key="analyzing">DeepSeek正在分析您的八字信息，请稍候...</p>
+                    <p class="disclaimer lang" data-key="disclaimerNote" style="margin-top: 20px;">本分析基于传统八字命理，结果仅供参考</p>
+                </div>
+                
+                <div class="result-container" id="result-container">
+                    <div class="bazi-display">
+                        <h3 class="lang" data-key="baziChart">您的八字命盘</h3>
+                        <div class="bazi-grid">
+                            <div class="bazi-item">
+                                甲<br>
+                                <span class="bazi-label lang" data-key="yearColumn">年柱</span>
+                            </div>
+                            <div class="bazi-item">
+                                子<br>
+                                <span class="bazi-label lang" data-key="yearBranch">年支</span>
+                            </div>
+                            <div class="bazi-item">
+                                丙<br>
+                                <span class="bazi-label lang" data-key="monthColumn">月柱</span>
+                            </div>
+                            <div class="bazi-item">
+                                寅<br>
+                                <span class="bazi-label lang" data-key="monthBranch">月支</span>
+                            </div>
+                            <div class="bazi-item">
+                                戊<br>
+                                <span class="bazi-label lang" data-key="dayColumn">日柱</span>
+                            </div>
+                            <div class="bazi-item">
+                                午<br>
+                                <span class="bazi-label lang" data-key="dayBranch">日支</span>
+                            </div>
+                            <div class="bazi-item">
+                                庚<br>
+                                <span class="bazi-label lang" data-key="hourColumn">时柱</span>
+                            </div>
+                            <div class="bazi-item">
+                                申<br>
+                                <span class="bazi-label lang" data-key="hourBranch">时支</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="analysis-card">
+                        <div class="card-title">
+                            <i class="fas fa-user"></i> <span class="lang" data-key="characterAnalysis">性格分析</span>
+                        </div>
+                        <div class="result-text" id="character-analysis">
+                            <span class="lang zh" data-key="characterText">根据您的八字分析，您属于丙火日主，具有热情开朗、积极向上的性格特质。您思维敏捷，善于表达，富有创造力和领导才能。但需注意避免急躁冲动，培养耐心和持久力。</span>
+                            <span class="lang en" data-key="characterText">According to your Bazi analysis, you belong to the Bing Fire Day Master, possessing a warm, cheerful, and positive personality. You are quick-witted, expressive, creative, and have leadership abilities. However, be mindful to avoid impulsiveness and cultivate patience and endurance.</span>
+                        </div>
+                    </div>
+                    
+                    <div class="analysis-card">
+                        <div class="card-title">
+                            <i class="fas fa-briefcase"></i> <span class="lang" data-key="careerAnalysis">事业分析</span>
+                        </div>
+                        <div class="result-text" id="career-analysis">
+                            <span class="lang zh" data-key="careerText">事业方面，您的八字显示适合从事创意、教育或与人沟通相关的行业。2024-2026年间将有重要发展机遇，建议把握贵人相助的时机。需注意团队合作，避免单打独斗。</span>
+                            <span class="lang en" data-key="careerText">Career-wise, your Bazi indicates suitability for creative, educational, or communication-related industries. Significant development opportunities will arise between 2024-2026; it's advised to seize moments when noble people offer assistance. Focus on teamwork and avoid working alone.</span>
+                        </div>
+                    </div>
+                    
+                    <div class="analysis-card">
+                        <div class="card-title">
+                            <i class="fas fa-heart"></i> <span class="lang" data-key="relationshipAnalysis">情感分析</span>
+                        </div>
+                        <div class="result-text" id="relationship-analysis">
+                            <span class="lang zh" data-key="relationshipText">情感方面，您重视精神交流和共同成长。未来一年桃花运较旺，但需谨慎选择。长期关系中，建议多关注伴侣的情感需求，培养共同兴趣爱好可增进感情。</span>
+                            <span class="lang en" data-key="relationshipText">Emotionally, you value intellectual exchange and mutual growth. Your romantic prospects will be strong in the coming year, but choose carefully. In long-term relationships, pay more attention to your partner's emotional needs; cultivating shared interests can strengthen your bond.</span>
+                        </div>
+                    </div>
+                    
+                    <div class="disclaimer">
+                        <p><strong class="lang" data-key="disclaimerTitle">免责声明：</strong> <span class="lang" data-key="disclaimerText">本分析结果基于传统八字命理，由DeepSeek生成，仅供娱乐参考。命运掌握在自己手中，建议您以积极乐观的心态面对生活，将更多精力投入到现实的努力中。</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p class="lang" data-key="footerText">© 2023 DeepSeek八字分析测试 | 本网站仅供演示使用</p>
+        </footer>
+    </div>
+
+    <script>
+        // 语言切换功能
+        document.addEventListener('DOMContentLoaded', function() {
+            const langZhBtn = document.getElementById('lang-zh');
+            const langEnBtn = document.getElementById('lang-en');
+            const langElements = document.querySelectorAll('.lang');
+            
+            // 初始设置为中文
+            let currentLang = 'zh';
+            
+            // 中文按钮点击事件
+            langZhBtn.addEventListener('click', function() {
+                if (currentLang === 'en') {
+                    switchLanguage('zh');
+                    currentLang = 'zh';
+                    langZhBtn.classList.add('active');
+                    langEnBtn.classList.remove('active');
+                }
+            });
+            
+            // 英文按钮点击事件
+            langEnBtn.addEventListener('click', function() {
+                if (currentLang === 'zh') {
+                    switchLanguage('en');
+                    currentLang = 'en';
+                    langEnBtn.classList.add('active');
+                    langZhBtn.classList.remove('active');
+                }
+            });
+            
+            // 切换语言函数
+            function switchLanguage(lang) {
+                langElements.forEach(element => {
+                    if (element.classList.contains('lang')) {
+                        if (lang === 'zh') {
+                            element.classList.remove('en');
+                            element.classList.add('zh');
+                        } else {
+                            element.classList.remove('zh');
+                            element.classList.add('en');
+                        }
+                    }
+                });
+            }
+            
+            // 表单提交和结果展示功能
+            const analyzeBtn = document.getElementById('analyze-btn');
+            const loading = document.getElementById('loading');
+            const resultContainer = document.getElementById('result-container');
+            
+            analyzeBtn.addEventListener('click', function() {
+                const name = document.getElementById('name').value;
+                const birthdate = document.getElementById('birthdate').value;
+                const birthtime = document.getElementById('birthtime').value;
+                const city = document.getElementById('city').value;
+                
+                // 简单验证
+                if (!name || !birthdate || !birthtime || !city) {
+                    alert(currentLang === 'zh' ? '请填写所有必填信息' : 'Please fill in all required fields');
+                    return;
+                }
+                
+                // 显示加载动画
+                loading.style.display = 'flex';
+                resultContainer.style.display = 'none';
+                analyzeBtn.disabled = true;
+                
+                // 模拟API请求延迟
+                setTimeout(function() {
+                    // 隐藏加载动画，显示结果
+                    loading.style.display = 'none';
+                    resultContainer.style.display = 'block';
+                    analyzeBtn.disabled = false;
+                    
+                    // 在实际应用中，这里应该调用DeepSeek API
+                    // 并更新结果内容
+                }, 2500);
+            });
+            
+            // 设置默认出生日期为20年前
+            const today = new Date();
+            const twentyYearsAgo = new Date(today.getFullYear() - 20, today.getMonth(), today.getDate());
+            const formattedDate = twentyYearsAgo.toISOString().split('T')[0];
+            document.getElementById('birthdate').value = formattedDate;
+        });
+    </script>
+</body>
+</html>
